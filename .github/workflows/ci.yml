@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9, '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # 由于我们使用标准库，不需要安装额外依赖
+        
+    - name: Test backend server
+      run: |
+        # 测试后端服务器是否能正常启动
+        timeout 10s python start_backend.py &
+        sleep 5
+        curl -f http://127.0.0.1:8000/health || exit 1
+        
+    - name: Check code style
+      run: |
+        # 检查Python代码风格
+        python -m py_compile start_backend.py
+        python -m py_compile deploy.py
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        publish_branch: gh-pages
+        
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        body: |
+          ## 🎉 新版本发布
+          
+          ### ✨ 新功能
+          - 查看提交历史了解详细更改
+          
+          ### 🐛 修复
+          - 各种bug修复和性能优化
+          
+          ### 📋 使用方法
+          1. 下载源代码
+          2. 运行 `python start_backend.py`
+          3. 在浏览器中打开 `file-manager-advanced.html`
+        draft: false
+        prerelease: false

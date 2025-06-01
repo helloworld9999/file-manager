@@ -1,6 +1,19 @@
-# 文件管理系统
+# 🗂️ 文件管理系统
+
+![GitHub stars](https://img.shields.io/github/stars/YOUR_USERNAME/file-manager-system?style=flat-square)
+![GitHub forks](https://img.shields.io/github/forks/YOUR_USERNAME/file-manager-system?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/YOUR_USERNAME/file-manager-system?style=flat-square)
+![GitHub license](https://img.shields.io/github/license/YOUR_USERNAME/file-manager-system?style=flat-square)
+![Python version](https://img.shields.io/badge/python-3.7+-blue?style=flat-square)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey?style=flat-square)
 
 一个现代化的文件管理和编辑系统，具有美观的界面和完整的文件操作功能。
+
+## 🌟 在线演示
+
+- [基础版演示](https://your-username.github.io/file-manager-system/file-manager-demo.html)
+- [编辑器版演示](https://your-username.github.io/file-manager-system/file-manager-editor.html)
+- [高级版演示](https://your-username.github.io/file-manager-system/file-manager-advanced.html) ⭐ 推荐
 
 ## ✨ 功能特性
 
