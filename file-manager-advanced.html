@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件管理系统 - 高级版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ffffff;
+        }
+
+        /* 标题栏 */
+        .title-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* 工具栏样式 */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: #ffffff;
+            border-bottom: 1px solid #e8e8e8;
+            gap: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .nav-btn {
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            background: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            min-width: 36px;
+            text-align: center;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: #40a9ff;
+            color: #1890ff;
+            background: #f6ffed;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f5f5f5;
+        }
+
+        .breadcrumb {
+            flex: 1;
+            padding: 8px 12px;
+            background: #fafafa;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .search-box {
+            width: 220px;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 300px;
+            background: #fafafa;
+            border-right: 1px solid #e8e8e8;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .drive-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            background: #ffffff;
+        }
+
+        .drive-item:hover {
+            background: #e6f7ff;
+            border-color: #91d5ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .drive-item.active {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+
+        .drive-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .drive-stats {
+            font-size: 12px;
+            color: #666;
+            margin-left: 28px;
+        }
+
+        .drive-item.active .drive-stats {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 6px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #52c41a 0%, #faad14 70%, #ff4d4f 90%);
+            transition: width 0.3s ease;
+            border-radius: 3px;
+        }
+
+        .drive-item.active .progress-bar {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* 内容区域 */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        /* 文件列表和编辑器容器 */
+        .content-panels {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 文件列表面板 */
+        .file-list-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e8e8e8;
+        }
+
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+
+        .view-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            border: 1px solid #d9d9d9;
+            background: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .view-btn.active {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+
+        .view-btn:not(.active):hover {
+            border-color: #40a9ff;
+            color: #1890ff;
+        }
+
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .file-table th {
+            background: #fafafa;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid #e8e8e8;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .file-table th:hover {
+            background: #f0f0f0;
+        }
+
+        .file-table td {
+            padding: 8px 16px;
+            border-bottom: 1px solid #f5f5f5;
+            font-size: 13px;
+        }
+
+        .file-table tr {
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .file-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .file-table tr.selected {
+            background: #e6f7ff;
+        }
+
+        .file-table tr.editable {
+            background: #f6ffed;
+        }
+
+        .file-icon {
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .editable-badge {
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: #52c41a;
+            color: white;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .file-actions {
+            display: none;
+            gap: 4px;
+            margin-left: auto;
+        }
+
+        .file-table tr:hover .file-actions {
+            display: flex;
+        }
+
+        .action-btn {
+            padding: 2px 6px;
+            border: 1px solid #d9d9d9;
+            background: #ffffff;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            border-color: #40a9ff;
+            color: #1890ff;
+        }
+
+        .action-btn.danger:hover {
+            border-color: #ff4d4f;
+            color: #ff4d4f;
+        }
+
+        /* 编辑器面板 */
+        .editor-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e8e8e8;
+            background: #fafafa;
+        }
+
+        .editor-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .editor-btn {
+            padding: 6px 12px;
+            border: 1px solid #d9d9d9;
+            background: #ffffff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .editor-btn:hover {
+            border-color: #40a9ff;
+            color: #1890ff;
+        }
+
+        .editor-btn.primary {
+            background: #1890ff;
+            color: white;
+            border-color: #1890ff;
+        }
+
+        .editor-btn.primary:hover {
+            background: #40a9ff;
+        }
+
+        .editor-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 16px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            background: #fafafa;
+        }
+
+        .editor-placeholder {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #999;
+            font-size: 16px;
+            background: #fafafa;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* JSON语法高亮 */
+        .json-editor {
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+        .json-boolean { color: #569cd6; }
+        .json-null { color: #569cd6; }
+        .json-key { color: #9cdcfe; }
+        .json-punctuation { color: #d4d4d4; }
+
+        /* 状态栏样式 */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            background: #f5f5f5;
+            border-top: 1px solid #e8e8e8;
+            font-size: 13px;
+            color: #666;
+            min-height: 36px;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 16px;
+            color: #666;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .loading-spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1890ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            padding: 20px;
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            border-radius: 8px;
+            color: #ff4d4f;
+            margin: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success {
+            padding: 12px 20px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 6px;
+            color: #52c41a;
+            margin: 16px;
+            text-align: center;
+        }
+
+        /* 通知样式 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #52c41a;
+        }
+
+        .notification.error {
+            background: #ff4d4f;
+        }
+
+        .notification.info {
+            background: #1890ff;
+        }
+
+        /* 搜索结果高亮 */
+        .search-highlight {
+            background: #fff2b8;
+            padding: 1px 2px;
+            border-radius: 2px;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .modal-body {
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #40a9ff;
+            box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 标题栏 -->
+        <div class="title-bar">
+            🗂️ 文件管理系统 - 高级版 v3.0
+        </div>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="nav-buttons">
+                <button class="nav-btn" id="backBtn" disabled title="后退 (Alt+←)">⬅️</button>
+                <button class="nav-btn" id="forwardBtn" disabled title="前进 (Alt+→)">➡️</button>
+                <button class="nav-btn" id="upBtn" disabled title="上级目录 (Alt+↑)">⬆️</button>
+                <button class="nav-btn" id="refreshBtn" title="刷新 (F5)">🔄</button>
+                <button class="nav-btn" id="homeBtn" title="主目录 (Alt+Home)">🏠</button>
+                <button class="nav-btn" id="newFileBtn" title="新建文件 (Ctrl+N)">📄</button>
+                <button class="nav-btn" id="newFolderBtn" title="新建文件夹 (Ctrl+Shift+N)">📁</button>
+            </div>
+            <div class="breadcrumb" id="breadcrumb">C:\</div>
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 搜索文件... (Ctrl+F)" />
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">💻 此电脑</div>
+                    <div id="drivesList">
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>加载驱动器...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <div class="content-panels">
+                    <!-- 文件列表面板 -->
+                    <div class="file-list-panel">
+                        <div class="file-list-header">
+                            <div class="view-controls">
+                                <button class="view-btn active" id="listViewBtn">📋 文件列表</button>
+                            </div>
+                            <div>
+                                <button class="view-btn" id="selectAllBtn">✅ 全选 (Ctrl+A)</button>
+                            </div>
+                        </div>
+
+                        <div class="file-list">
+                            <div id="fileListContent">
+                                <div class="loading">
+                                    <div class="loading-spinner"></div>
+                                    <div>加载文件列表...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 编辑器面板 -->
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <div class="editor-title" id="editorTitle">文件编辑器</div>
+                            <div class="editor-actions">
+                                <button class="editor-btn" id="formatBtn" disabled title="格式化 (Ctrl+Shift+F)">🎨 格式化</button>
+                                <button class="editor-btn" id="saveBtn" disabled title="保存 (Ctrl+S)">💾 保存</button>
+                                <button class="editor-btn" id="closeBtn" disabled title="关闭 (Ctrl+W)">❌ 关闭</button>
+                            </div>
+                        </div>
+
+                        <div class="editor-content">
+                            <div class="editor-placeholder" id="editorPlaceholder">
+                                <div>选择一个可编辑的文件开始编辑</div>
+                                <small>支持 .txt, .json, .md, .xml, .yaml 等文本文件</small>
+                                <small>快捷键: Ctrl+N 新建文件, Ctrl+S 保存, Ctrl+F 搜索</small>
+                            </div>
+                            <textarea class="editor-textarea" id="editorTextarea" style="display: none;"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div id="statusLeft">正在初始化...</div>
+            <div id="statusRight">文件管理系统 v3.0</div>
+        </div>
+    </div>
+
+    <!-- 通知容器 -->
+    <div id="notification" class="notification"></div>
+
+    <!-- 重命名模态框 -->
+    <div id="renameModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">重命名</div>
+            <div class="modal-body">
+                <input type="text" class="modal-input" id="renameInput" placeholder="输入新名称">
+            </div>
+            <div class="modal-footer">
+                <button class="view-btn" onclick="closeRenameModal()">取消</button>
+                <button class="view-btn active" onclick="confirmRename()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        let currentPath = 'C:/';
+        let selectedFiles = [];
+        let fileData = [];
+        let currentEditingFile = null;
+        let editorContent = '';
+        let isEditorDirty = false;
+        let searchQuery = '';
+        let renameTarget = null;
+
+        // API基础URL
+        const API_BASE = 'http://127.0.0.1:8000';
+
+        // 通知函数
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // 初始化应用
+        async function initApp() {
+            console.log('应用初始化开始');
+            
+            try {
+                // 首先检查API连接
+                await checkApiConnection();
+                
+                // 加载驱动器和文件列表
+                await Promise.all([
+                    loadDrives(),
+                    loadFileList(currentPath)
+                ]);
+                
+                setupEventListeners();
+                setupKeyboardShortcuts();
+                console.log('应用初始化完成');
+                
+                document.getElementById('statusLeft').textContent = '就绪';
+                showNotification('文件管理系统已启动', 'success');
+                
+            } catch (error) {
+                console.error('应用初始化失败', error);
+                document.getElementById('statusLeft').textContent = '初始化失败';
+                showNotification('初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 检查API连接
+        async function checkApiConnection() {
+            console.log('检查API连接');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (!response.ok) {
+                    throw new Error(`API连接失败: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('API连接成功', data);
+                return true;
+            } catch (error) {
+                console.error('API连接失败', error);
+                throw error;
+            }
+        }
+
+        // 设置键盘快捷键
+        function setupKeyboardShortcuts() {
+            document.addEventListener('keydown', (e) => {
+                // Ctrl+S - 保存
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    if (currentEditingFile) {
+                        saveCurrentFile();
+                    }
+                }
+
+                // Ctrl+N - 新建文件
+                if (e.ctrlKey && e.key === 'n' && !e.shiftKey) {
+                    e.preventDefault();
+                    createNewFile();
+                }
+
+                // Ctrl+Shift+N - 新建文件夹
+                if (e.ctrlKey && e.shiftKey && e.key === 'N') {
+                    e.preventDefault();
+                    createNewFolder();
+                }
+
+                // Ctrl+W - 关闭编辑器
+                if (e.ctrlKey && e.key === 'w') {
+                    e.preventDefault();
+                    if (currentEditingFile) {
+                        closeEditor();
+                    }
+                }
+
+                // Ctrl+F - 搜索
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('searchBox').focus();
+                }
+
+                // F5 - 刷新
+                if (e.key === 'F5') {
+                    e.preventDefault();
+                    loadFileList(currentPath);
+                }
+
+                // Ctrl+Shift+F - 格式化
+                if (e.ctrlKey && e.shiftKey && e.key === 'F') {
+                    e.preventDefault();
+                    formatCurrentFile();
+                }
+
+                // Delete - 删除选中文件
+                if (e.key === 'Delete') {
+                    const selectedRow = document.querySelector('.file-table tr.selected');
+                    if (selectedRow) {
+                        const filePath = selectedRow.dataset.path;
+                        deleteFile(filePath);
+                    }
+                }
+
+                // F2 - 重命名
+                if (e.key === 'F2') {
+                    const selectedRow = document.querySelector('.file-table tr.selected');
+                    if (selectedRow) {
+                        const filePath = selectedRow.dataset.path;
+                        showRenameModal(filePath);
+                    }
+                }
+            });
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            console.log('设置事件监听器');
+
+            // 导航按钮
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                loadFileList(currentPath);
+            });
+
+            document.getElementById('homeBtn').addEventListener('click', () => {
+                navigateToPath('C:/');
+            });
+
+            document.getElementById('backBtn').addEventListener('click', () => {
+                if (currentPath !== 'C:/') {
+                    const parts = currentPath.split('/').filter(Boolean);
+                    parts.pop();
+                    const parentPath = parts.length > 0 ? parts.join('/') + '/' : 'C:/';
+                    navigateToPath(parentPath);
+                }
+            });
+
+            // 编辑器按钮
+            document.getElementById('saveBtn').addEventListener('click', saveCurrentFile);
+            document.getElementById('closeBtn').addEventListener('click', closeEditor);
+            document.getElementById('formatBtn').addEventListener('click', formatCurrentFile);
+
+            // 编辑器内容变化监听
+            document.getElementById('editorTextarea').addEventListener('input', (e) => {
+                editorContent = e.target.value;
+                isEditorDirty = true;
+                updateEditorTitle();
+            });
+
+            // 新建按钮
+            document.getElementById('newFileBtn').addEventListener('click', createNewFile);
+            document.getElementById('newFolderBtn').addEventListener('click', createNewFolder);
+
+            // 搜索框
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                filterFileList();
+            });
+        }
+
+        // 搜索和筛选文件列表
+        function filterFileList() {
+            const rows = document.querySelectorAll('.file-table tbody tr');
+
+            rows.forEach(row => {
+                const fileName = row.querySelector('.file-name span:last-child').textContent;
+                const isMatch = fileName.toLowerCase().includes(searchQuery.toLowerCase());
+
+                if (isMatch || searchQuery === '') {
+                    row.style.display = '';
+                    // 高亮搜索结果
+                    if (searchQuery !== '') {
+                        highlightSearchTerm(row, searchQuery);
+                    } else {
+                        removeHighlight(row);
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // 高亮搜索词
+        function highlightSearchTerm(row, term) {
+            const nameElement = row.querySelector('.file-name span:last-child');
+            const originalText = nameElement.textContent;
+            const regex = new RegExp(`(${term})`, 'gi');
+            const highlightedText = originalText.replace(regex, '<span class="search-highlight">$1</span>');
+            nameElement.innerHTML = highlightedText;
+        }
+
+        // 移除高亮
+        function removeHighlight(row) {
+            const nameElement = row.querySelector('.file-name span:last-child');
+            nameElement.innerHTML = nameElement.textContent;
+        }
+
+        // 格式化当前文件
+        function formatCurrentFile() {
+            if (!currentEditingFile) {
+                showNotification('没有打开的文件', 'error');
+                return;
+            }
+
+            try {
+                const textarea = document.getElementById('editorTextarea');
+                const content = textarea.value;
+
+                if (currentEditingFile.path.endsWith('.json')) {
+                    // 格式化JSON
+                    const parsed = JSON.parse(content);
+                    const formatted = JSON.stringify(parsed, null, 2);
+                    textarea.value = formatted;
+                    editorContent = formatted;
+                    isEditorDirty = true;
+                    updateEditorTitle();
+                    showNotification('JSON格式化完成', 'success');
+                } else {
+                    showNotification('当前文件类型不支持格式化', 'info');
+                }
+            } catch (error) {
+                showNotification('格式化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 删除文件
+        async function deleteFile(filePath) {
+            const fileName = filePath.split('/').pop();
+
+            if (!confirm(`确定要删除 "${fileName}" 吗？此操作不可撤销。`)) {
+                return;
+            }
+
+            try {
+                showNotification('正在删除...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/files/delete?path=${encodeURIComponent(filePath)}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || '删除失败');
+                }
+
+                showNotification(`${fileName} 已删除`, 'success');
+
+                // 如果删除的是当前编辑的文件，关闭编辑器
+                if (currentEditingFile && currentEditingFile.path === filePath) {
+                    closeEditor();
+                }
+
+                // 刷新文件列表
+                loadFileList(currentPath);
+
+            } catch (error) {
+                console.error('删除文件失败', error);
+                showNotification(`删除失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示重命名模态框
+        function showRenameModal(filePath) {
+            const fileName = filePath.split('/').pop();
+            renameTarget = filePath;
+
+            document.getElementById('renameInput').value = fileName;
+            document.getElementById('renameModal').classList.add('show');
+            document.getElementById('renameInput').focus();
+            document.getElementById('renameInput').select();
+        }
+
+        // 关闭重命名模态框
+        function closeRenameModal() {
+            document.getElementById('renameModal').classList.remove('show');
+            renameTarget = null;
+        }
+
+        // 确认重命名
+        async function confirmRename() {
+            const newName = document.getElementById('renameInput').value.trim();
+
+            if (!newName) {
+                showNotification('文件名不能为空', 'error');
+                return;
+            }
+
+            if (!renameTarget) {
+                closeRenameModal();
+                return;
+            }
+
+            try {
+                const oldPath = renameTarget;
+                const pathParts = oldPath.split('/');
+                pathParts[pathParts.length - 1] = newName;
+                const newPath = pathParts.join('/');
+
+                showNotification('正在重命名...', 'info');
+
+                // 这里应该调用重命名API，但我们的简单服务器没有实现
+                // 作为演示，我们只显示消息
+                showNotification('重命名功能需要后端支持', 'info');
+
+                closeRenameModal();
+
+            } catch (error) {
+                console.error('重命名失败', error);
+                showNotification(`重命名失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 创建新文件夹
+        async function createNewFolder() {
+            const folderName = prompt('请输入新文件夹名称:');
+            if (!folderName) return;
+
+            const folderPath = currentPath + (currentPath.endsWith('/') ? '' : '/') + folderName;
+
+            try {
+                showNotification('正在创建文件夹...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/files/mkdir`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        path: folderPath
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || '创建失败');
+                }
+
+                showNotification(`文件夹 ${folderName} 已创建`, 'success');
+
+                // 刷新文件列表
+                loadFileList(currentPath);
+
+            } catch (error) {
+                console.error('创建文件夹失败', error);
+                showNotification(`创建文件夹失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 加载驱动器列表
+        async function loadDrives() {
+            console.log('开始加载驱动器列表');
+            try {
+                const response = await fetch(`${API_BASE}/api/files/drives`);
+                console.log('驱动器API响应状态', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const drives = await response.json();
+                console.log('获取到驱动器数据', drives);
+
+                const drivesList = document.getElementById('drivesList');
+                drivesList.innerHTML = '';
+
+                if (drives.length === 0) {
+                    drivesList.innerHTML = '<div class="error">未找到可用驱动器</div>';
+                    return;
+                }
+
+                drives.forEach(drive => {
+                    const driveElement = createDriveElement(drive);
+                    drivesList.appendChild(driveElement);
+                });
+
+                console.log('驱动器列表渲染完成');
+
+            } catch (error) {
+                console.error('加载驱动器失败', error);
+                document.getElementById('drivesList').innerHTML = `<div class="error">加载驱动器失败: ${error.message}</div>`;
+            }
+        }
+
+        // 创建驱动器元素
+        function createDriveElement(drive) {
+            const div = document.createElement('div');
+            div.className = 'drive-item';
+
+            // 检查是否为当前驱动器
+            if (currentPath.startsWith(`${drive.letter}:/`)) {
+                div.classList.add('active');
+            }
+
+            const usedSpace = drive.total_space - drive.free_space;
+            const usagePercent = Math.round((usedSpace / drive.total_space) * 100);
+            const totalGB = Math.round(drive.total_space / (1024 * 1024 * 1024));
+            const freeGB = Math.round(drive.free_space / (1024 * 1024 * 1024));
+
+            div.innerHTML = `
+                <div class="drive-info">
+                    <span>💾</span>
+                    <span>${drive.label || `本地磁盘 (${drive.letter}:)`}</span>
+                </div>
+                <div class="drive-stats">
+                    <div>${freeGB}GB 可用，共 ${totalGB}GB</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${usagePercent}%"></div>
+                    </div>
+                </div>
+            `;
+
+            div.addEventListener('click', () => {
+                console.log('点击驱动器', drive.letter);
+                navigateToPath(`${drive.letter}:/`);
+            });
+
+            return div;
+        }
+
+        // 加载文件列表
+        async function loadFileList(path) {
+            console.log('开始加载文件列表', path);
+            try {
+                document.getElementById('fileListContent').innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>加载 ${path} 中的文件...</div>
+                    </div>
+                `;
+
+                const url = `${API_BASE}/api/files/list?path=${encodeURIComponent(path)}`;
+                console.log('请求URL', url);
+
+                const response = await fetch(url);
+                console.log('文件列表API响应状态', response.status);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API错误响应', errorText);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('获取到文件数据', {
+                    path: data.current_path,
+                    itemCount: data.items?.length || 0,
+                    totalSize: data.total_size
+                });
+
+                if (data.error) {
+                    throw new Error(data.message);
+                }
+
+                fileData = data.items || [];
+                currentPath = data.current_path;
+
+                updateBreadcrumb(currentPath);
+                updateNavigationButtons(data.parent_path);
+                renderFileList(fileData);
+                updateStatusBar(data);
+                updateDriveSelection();
+
+                console.log('文件列表加载完成');
+
+            } catch (error) {
+                console.error('加载文件列表失败', error);
+                document.getElementById('fileListContent').innerHTML = `
+                    <div class="error">
+                        <div>加载失败: ${error.message}</div>
+                        <div style="margin-top: 10px; font-size: 12px;">
+                            请检查后端服务是否正常运行 (http://127.0.0.1:8000)
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染文件列表
+        function renderFileList(items) {
+            const container = document.getElementById('fileListContent');
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="loading">此文件夹为空</div>';
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'file-table';
+
+            // 表头
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">选择</th>
+                        <th>名称</th>
+                        <th style="width: 120px;">大小</th>
+                        <th style="width: 120px;">类型</th>
+                        <th style="width: 160px;">修改时间</th>
+                        <th style="width: 100px;">操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            `;
+
+            const tbody = table.querySelector('tbody');
+
+            items.forEach(item => {
+                const row = createFileRow(item);
+                tbody.appendChild(row);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(table);
+
+            // 应用搜索筛选
+            if (searchQuery) {
+                filterFileList();
+            }
+        }
+
+        // 创建文件行
+        function createFileRow(item) {
+            const row = document.createElement('tr');
+            row.dataset.path = item.path;
+
+            const icon = getFileIcon(item);
+            const size = item.is_directory ? '--' : formatFileSize(item.size);
+            const type = item.is_directory ? '文件夹' : getFileTypeText(item.file_type);
+            const time = formatTime(item.modified_time);
+            const isEditable = isEditableFile(item);
+
+            // 如果是可编辑文件，添加特殊样式
+            if (isEditable) {
+                row.classList.add('editable');
+            }
+
+            row.innerHTML = `
+                <td><input type="checkbox" /></td>
+                <td>
+                    <div class="file-name">
+                        <span class="file-icon">${icon}</span>
+                        <span>${item.name}</span>
+                        ${isEditable ? '<span class="editable-badge">可编辑</span>' : ''}
+                    </div>
+                </td>
+                <td>${size}</td>
+                <td>${type}</td>
+                <td>${time}</td>
+                <td>
+                    <div class="file-actions">
+                        ${isEditable ? '<button class="action-btn" onclick="openFileInEditor(\'' + item.path + '\')">编辑</button>' : ''}
+                        <button class="action-btn" onclick="showRenameModal(\'' + item.path + '\')">重命名</button>
+                        <button class="action-btn danger" onclick="deleteFile(\'' + item.path + '\')">删除</button>
+                    </div>
+                </td>
+            `;
+
+            // 双击事件
+            row.addEventListener('dblclick', () => {
+                if (item.is_directory) {
+                    navigateToPath(item.path);
+                } else if (isEditable) {
+                    openFileInEditor(item.path);
+                } else {
+                    showNotification(`文件 ${item.name} 不支持编辑`, 'info');
+                }
+            });
+
+            // 单击选择
+            row.addEventListener('click', (e) => {
+                if (e.target.type !== 'checkbox' && !e.target.classList.contains('action-btn')) {
+                    // 清除其他选择
+                    document.querySelectorAll('.file-table tr.selected').forEach(tr => {
+                        tr.classList.remove('selected');
+                    });
+                    row.classList.add('selected');
+                }
+            });
+
+            return row;
+        }
+
+        // 检查文件是否可编辑
+        function isEditableFile(item) {
+            if (item.is_directory) return false;
+            const editableExtensions = ['.txt', '.json', '.md', '.xml', '.yaml', '.yml', '.log', '.csv', '.ini', '.cfg', '.conf'];
+            return editableExtensions.includes(item.extension?.toLowerCase() || '');
+        }
+
+        // 在编辑器中打开文件
+        async function openFileInEditor(filePath) {
+            try {
+                // 如果当前有未保存的文件，询问是否保存
+                if (isEditorDirty && currentEditingFile) {
+                    if (confirm('当前文件有未保存的更改，是否保存？')) {
+                        await saveCurrentFile();
+                    }
+                }
+
+                showNotification('正在加载文件...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/files/content?path=${encodeURIComponent(filePath)}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.message);
+                }
+
+                // 更新编辑器
+                currentEditingFile = data;
+                editorContent = data.content;
+                isEditorDirty = false;
+
+                const textarea = document.getElementById('editorTextarea');
+                const placeholder = document.getElementById('editorPlaceholder');
+
+                textarea.value = data.content;
+                textarea.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                // 如果是JSON文件，应用特殊样式
+                if (data.path.endsWith('.json')) {
+                    textarea.classList.add('json-editor');
+                } else {
+                    textarea.classList.remove('json-editor');
+                }
+
+                updateEditorTitle();
+
+                // 启用编辑器按钮
+                document.getElementById('saveBtn').disabled = false;
+                document.getElementById('closeBtn').disabled = false;
+                document.getElementById('formatBtn').disabled = !data.path.endsWith('.json');
+
+                showNotification(`文件 ${data.path.split('/').pop()} 已打开`, 'success');
+
+            } catch (error) {
+                console.error('打开文件失败', error);
+                showNotification(`打开文件失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 保存当前文件
+        async function saveCurrentFile() {
+            if (!currentEditingFile) {
+                showNotification('没有打开的文件', 'error');
+                return;
+            }
+
+            try {
+                showNotification('正在保存文件...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/files/save`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        path: currentEditingFile.path,
+                        content: editorContent,
+                        encoding: currentEditingFile.encoding || 'utf-8'
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || '保存失败');
+                }
+
+                isEditorDirty = false;
+                updateEditorTitle();
+
+                showNotification(`文件保存成功`, 'success');
+
+                // 刷新文件列表
+                loadFileList(currentPath);
+
+            } catch (error) {
+                console.error('保存文件失败', error);
+                showNotification(`保存文件失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 关闭编辑器
+        function closeEditor() {
+            if (isEditorDirty && currentEditingFile) {
+                if (!confirm('当前文件有未保存的更改，确定要关闭吗？')) {
+                    return;
+                }
+            }
+
+            currentEditingFile = null;
+            editorContent = '';
+            isEditorDirty = false;
+
+            const textarea = document.getElementById('editorTextarea');
+            const placeholder = document.getElementById('editorPlaceholder');
+
+            textarea.value = '';
+            textarea.style.display = 'none';
+            textarea.classList.remove('json-editor');
+            placeholder.style.display = 'flex';
+
+            updateEditorTitle();
+
+            // 禁用编辑器按钮
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('closeBtn').disabled = true;
+            document.getElementById('formatBtn').disabled = true;
+
+            showNotification('编辑器已关闭', 'info');
+        }
+
+        // 更新编辑器标题
+        function updateEditorTitle() {
+            const titleElement = document.getElementById('editorTitle');
+
+            if (currentEditingFile) {
+                const fileName = currentEditingFile.path.split('/').pop();
+                const dirtyIndicator = isEditorDirty ? ' *' : '';
+                titleElement.textContent = `${fileName}${dirtyIndicator}`;
+            } else {
+                titleElement.textContent = '文件编辑器';
+            }
+        }
+
+        // 创建新文件
+        function createNewFile() {
+            const fileName = prompt('请输入新文件名（包含扩展名）:');
+            if (!fileName) return;
+
+            const filePath = currentPath + (currentPath.endsWith('/') ? '' : '/') + fileName;
+
+            // 模拟新文件
+            currentEditingFile = {
+                path: filePath,
+                content: '',
+                encoding: 'utf-8',
+                is_editable: true
+            };
+
+            editorContent = '';
+            isEditorDirty = true;
+
+            const textarea = document.getElementById('editorTextarea');
+            const placeholder = document.getElementById('editorPlaceholder');
+
+            textarea.value = '';
+            textarea.style.display = 'block';
+            placeholder.style.display = 'none';
+
+            // 如果是JSON文件，应用特殊样式
+            if (fileName.endsWith('.json')) {
+                textarea.classList.add('json-editor');
+            } else {
+                textarea.classList.remove('json-editor');
+            }
+
+            updateEditorTitle();
+
+            // 启用编辑器按钮
+            document.getElementById('saveBtn').disabled = false;
+            document.getElementById('closeBtn').disabled = false;
+            document.getElementById('formatBtn').disabled = !fileName.endsWith('.json');
+
+            // 聚焦到编辑器
+            textarea.focus();
+
+            showNotification(`新文件 ${fileName} 已创建，请编辑后保存`, 'success');
+        }
+
+        // 辅助函数
+        function getFileIcon(item) {
+            if (item.is_directory) return '📁';
+
+            switch (item.file_type) {
+                case 'text': return '📄';
+                case 'code': return '⚙️';
+                case 'image': return '🖼️';
+                case 'video': return '🎬';
+                case 'audio': return '🎵';
+                case 'document': return '📋';
+                case 'archive': return '📦';
+                default: return '📄';
+            }
+        }
+
+        function getFileTypeText(type) {
+            const typeMap = {
+                'text': '文本文件',
+                'code': '代码文件',
+                'image': '图片文件',
+                'video': '视频文件',
+                'audio': '音频文件',
+                'document': '文档文件',
+                'archive': '压缩文件',
+                'file': '文件'
+            };
+            return typeMap[type] || '文件';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function navigateToPath(path) {
+            console.log('导航到路径', path);
+            loadFileList(path);
+        }
+
+        function updateBreadcrumb(path) {
+            document.getElementById('breadcrumb').textContent = path;
+        }
+
+        function updateNavigationButtons(parentPath) {
+            const backBtn = document.getElementById('backBtn');
+            const upBtn = document.getElementById('upBtn');
+
+            backBtn.disabled = !parentPath;
+            upBtn.disabled = !parentPath;
+        }
+
+        function updateStatusBar(data) {
+            const folders = data.items.filter(item => item.is_directory).length;
+            const files = data.items.filter(item => !item.is_directory).length;
+            const editableFiles = data.items.filter(item => !item.is_directory && isEditableFile(item)).length;
+
+            let statusText = '';
+            if (folders > 0) statusText += `${folders} 个文件夹`;
+            if (files > 0) {
+                if (statusText) statusText += ', ';
+                statusText += `${files} 个文件`;
+            }
+            if (editableFiles > 0) {
+                statusText += ` (${editableFiles} 个可编辑)`;
+            }
+            if (!statusText) statusText = '空文件夹';
+
+            document.getElementById('statusLeft').textContent = statusText;
+            document.getElementById('statusRight').textContent = data.current_path;
+        }
+
+        function updateDriveSelection() {
+            document.querySelectorAll('.drive-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const currentDrive = currentPath.charAt(0);
+            document.querySelectorAll('.drive-item').forEach(item => {
+                if (item.textContent.includes(`(${currentDrive}:)`)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

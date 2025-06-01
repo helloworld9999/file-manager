@@ -1,0 +1,36 @@
+{
+  "name": "文件管理系统",
+  "version": "2.0.0",
+  "description": "一个现代化的文件管理和编辑系统",
+  "features": [
+    "文件浏览",
+    "文本编辑",
+    "JSON编辑",
+    "文件创建",
+    "实时保存"
+  ],
+  "supported_formats": {
+    "text": [".txt", ".md", ".log"],
+    "code": [".json", ".xml", ".yaml", ".yml"],
+    "config": [".ini", ".cfg", ".conf"]
+  },
+  "ui": {
+    "theme": "modern",
+    "layout": "split-panel",
+    "editor": {
+      "font_family": "Consolas, Monaco, monospace",
+      "font_size": 14,
+      "line_height": 1.5,
+      "auto_save": true
+    }
+  },
+  "api": {
+    "base_url": "http://127.0.0.1:8000",
+    "endpoints": {
+      "files": "/api/files/list",
+      "content": "/api/files/content",
+      "save": "/api/files/save",
+      "drives": "/api/files/drives"
+    }
+  }
+}
