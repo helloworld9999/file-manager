@@ -327,8 +327,18 @@
     </div>
 
     <script>
+        // 检测操作系统并设置默认路径
+        function getDefaultPath() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.includes('win')) {
+                return 'C:/';
+            } else {
+                return '/';
+            }
+        }
+
         // 全局状态
-        let currentPath = 'C:/';
+        let currentPath = getDefaultPath();
         let selectedFiles = [];
         let fileData = [];
 
@@ -349,13 +359,14 @@
             });
 
             document.getElementById('homeBtn').addEventListener('click', () => {
-                navigateToPath('C:/');
+                navigateToPath(getDefaultPath());
             });
 
             document.getElementById('backBtn').addEventListener('click', () => {
-                if (currentPath !== 'C:/') {
+                const defaultPath = getDefaultPath();
+                if (currentPath !== defaultPath) {
                     const parentPath = currentPath.split('/').slice(0, -2).join('/') + '/';
-                    navigateToPath(parentPath || 'C:/');
+                    navigateToPath(parentPath || defaultPath);
                 }
             });
         }
@@ -391,7 +402,11 @@
         function createDriveElement(drive) {
             const div = document.createElement('div');
             div.className = 'drive-item';
-            if (currentPath.startsWith(`${drive.letter}:/`)) {
+
+            // 构建驱动器路径
+            const drivePath = drive.letter === '/' ? '/' : `${drive.letter}:/`;
+
+            if (currentPath.startsWith(drivePath)) {
                 div.classList.add('active');
             }
 
@@ -414,7 +429,7 @@
             `;
 
             div.addEventListener('click', () => {
-                navigateToPath(`${drive.letter}:/`);
+                navigateToPath(drivePath);
             });
 
             return div;

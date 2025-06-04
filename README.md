@@ -66,33 +66,67 @@
 
 ```
 文件管理系统/
+├── 启动文件管理系统.bat          # Windows启动脚本
+├── 启动文件管理系统.sh           # macOS中文启动脚本
+├── start_mac.sh                  # macOS英文启动脚本
+├── launch.sh                     # macOS一键启动脚本
+├── quick_start.py                # Python快速启动脚本
 ├── start_backend.py              # 后端服务器
 ├── file-manager-demo.html        # 基础演示版
 ├── file-manager-editor.html      # 带编辑器版
 ├── file-manager-advanced.html    # 高级完整版（推荐）
 ├── test-file.txt                 # 测试文本文件
 ├── test-config.json              # 测试JSON文件
-└── README.md                     # 使用说明
+├── README.md                     # 使用说明
+└── README_MAC.md                 # macOS详细说明
 ```
 
 ## 🚀 快速开始
 
-### 1. 启动后端服务
+### Windows 系统
+双击运行 `启动文件管理系统.bat` 文件
+
+### macOS 系统
+```bash
+# 方法1：使用一键启动脚本
+./launch.sh
+
+# 方法2：使用英文启动脚本
+./start_mac.sh
+
+# 方法3：使用中文启动脚本
+./启动文件管理系统.sh
+
+# 方法4：直接运行Python脚本
+python3 quick_start.py
+```
+
+### Linux 系统
+```bash
+python3 quick_start.py
+```
+
+### 手动启动（所有系统）
+
+#### 1. 启动后端服务
 ```bash
 python start_backend.py
 ```
 
-### 2. 打开前端界面
+#### 2. 打开前端界面
 在浏览器中打开以下任一文件：
 - `file-manager-demo.html` - 基础版
 - `file-manager-editor.html` - 带编辑器版
 - `file-manager-advanced.html` - 高级版（推荐）
 
-### 3. 开始使用
+#### 3. 开始使用
 1. 点击左侧驱动器切换盘符
 2. 双击文件夹进入子目录
 3. 双击可编辑文件在右侧编辑器中打开
 4. 使用工具栏按钮或快捷键进行操作
+
+### macOS 详细说明
+如需详细的macOS安装和使用说明，请查看 [README_MAC.md](README_MAC.md)
 
 ## 📖 API接口
 
